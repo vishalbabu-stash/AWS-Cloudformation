@@ -1,0 +1,111 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"A testing cloudformation template.",
+  "Metadata":
+  {
+   	"Environment":{"Description":"STG"},
+    "Product":{"Description":"CRM"}
+  },
+  "Parameters":{
+    "TSTSTTBKTPrefix":{
+      "Type":"String",
+      "Description":"Enter TST S3 STT BKT prefix."
+    }
+  },
+  "Resources":
+  {
+  	"TSTIAMRole":
+    {
+  		"Type" : "AWS::IAM::Role",
+  		"Properties" : 
+      {
+      	"AssumeRolePolicyDocument" : 
+        {
+      		"Version": "2012-10-17",
+  				"Statement": 
+          [
+    				{
+      				"Effect": "Allow",
+      				"Principal": 
+                {
+        				  "Service": "ec2.amazonaws.com"
+      				  },
+      				"Action": "sts:AssumeRole"
+    				}
+  				]
+      	},
+      	"Description" : "Allows EC2 instances to call AWS services on your behalf.",
+      	"ManagedPolicyArns" : 
+      	[ 
+      		"arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AWSCodeCommitFullAccess",
+          "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess",
+          "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+      	],
+        "MaxSessionDuration" : 9600,
+      	"RoleName" : "TST-EC2-RL",
+      	"Tags" : 
+      	[
+      		{"Key":"Name","Value":"TST-IAM-Role"},
+          {"Key":"Environment","Value":"TST"},
+          {"Key":"Region","Value":"us-west-2"},
+          {"Key":"Product","Value":"CRM"}
+      	]
+    	}
+		},
+    "TSTVPC" : 
+    {
+      "Type":"AWS::EC2::VPC",
+      "Properties":
+      {
+        "CidrBlock":"100.1.0.0/16",
+        "EnableDnsSupport":true,
+        "EnableDnsHostnames":true,
+        "InstanceTenancy":"default",
+        "Tags":
+        [
+          {"Key":"Name","Value":"TEST-VPC"},
+          {"Key":"Environment","Value":"TEST"},
+          {"Key":"Region","Value":"us-west-2"},
+          {"Key":"Product","Value":"CRM"}
+        ]
+      }
+    },
+    "TSTS3STTBKT":{
+      "Type":"AWS::S3::Bucket",
+      "Properties":{
+        "AccessControl":"Private",
+        "BucketEncryption":{
+          "ServerSideEncryptionConfiguration":[
+            {"ServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}
+          ]
+        },
+        "BucketName":{"Fn::Join":["",[{"Ref":"TSTSTTBKTPrefix"},"-tst-stt-bkt"]]},
+        "PublicAccessBlockConfiguration":{
+          "BlockPublicAcls":true,
+          "BlockPublicPolicy":true,
+          "IgnorePublicAcls":true,
+          "RestrictPublicBuckets":true
+        },
+        "CorsConfiguration":{
+          "CorsRules":[
+            {
+              "Id":1,
+              "AllowedHeaders":["*"],
+              "AllowedMethods":["GET","HEAD"],
+              "AllowedOrigins":["*"],
+              "ExposedHeaders":[],
+              "MaxAge":86400
+            }
+          ]
+        },
+        "Tags":[
+          {"Key":"Name","Value":"TST-STT-BKT"},
+          {"Key":"Environment","Value":"TEST"},
+          {"Key":"Region","Value":"us-west-2"},
+          {"Key":"Product","Value":"CRM"}
+        ]
+      }
+    }
+  }
+}
